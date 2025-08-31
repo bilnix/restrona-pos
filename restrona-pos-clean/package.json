@@ -1,0 +1,23 @@
+{
+  "name": "restrona-pos",
+  "version": "1.0.0",
+  "description": "Restrona Restaurant POS System with Firebase backend",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "setup": "npm run install-all",
+    "setup-super-admin": "node scripts/setup-super-admin.js",
+    "deploy-rules": "firebase deploy --only firestore:rules,storage",
+    "deploy-all": "firebase deploy"
+  },
+  "keywords": ["restaurant", "pos", "firebase", "react", "nodejs"],
+  "author": "Restrona Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,0 +1,80 @@
+Restaurant POS System - Requirements Document
+1. Introduction
+This document outlines the detailed requirements for a Restaurant POS (Point of Sale) system
+named 'Restrona'.
+The system will support Super Admin, Restaurant Admin, Waiters, and Customers with role-based
+permissions and restaurant-specific features.
+2. Authentication & Roles
+- Super Admin:
+- Unique login with phone & password.
+- Manage all restaurant accounts globally.
+- Full access to system-wide features.
+- Restaurant Admin:
+- Login with phone & OTP/password.
+- Can manage restaurant info, menu, tables, QR codes, staff, and permissions.
+- Can create/manage users with custom permissions (no predefined roles).
+- Can manage geofencing for QR scan access.
+- Waiter:
+- Login with phone & OTP.
+- Receives table orders when scanned by customers.
+- Can print bills and update order status.
+- Customer:
+- Scans QR at table to order food (restricted to geofence).
+- Can pay and give feedback.
+3. Core Features
+- Multi-Restaurant Support (one Super Admin, multiple Restaurant Admins).
+- User management with permissions (no fixed roles).
+- Restaurant Admin controls menu, categories, tables, and staff.
+- Table-wise booking system.
+- QR code generation per table for direct ordering.
+- Dine-in, Takeaway, and Delivery order categorization.
+- Billing & Invoice generation (with GST/tax support).
+- Payment integration (UPI, Card, Cash).
+- Waiter notifications for new table orders.
+- Print bill directly from waiter app.
+- Geofencing to restrict QR scan usage within defined area.
+4. Advanced Features
+- Analytics Dashboard:
+- Sales report by day/week/month.
+- Category-wise sales (Dine-in, Takeaway, Delivery).
+- Table occupancy analytics.
+- Staff performance tracking.
+- Inventory Management:
+- Track raw materials.
+- Low-stock alerts.
+- Automatic deduction from inventory on order.
+- Customer Management:
+- Loyalty points & discounts.
+- Order history.
+- Feedback system.
+5. Design & UI
+- Theme: White & Blue, modern and minimalistic.
+- Responsive design for PWA (Progressive Web App).
+- Mobile-first UI for waiters & admins.
+- Super Admin dashboard for global overview.
+6. Technical Requirements
+- Firebase Authentication (Phone + OTP, Password for Super Admin).
+- Firebase Firestore (real-time database for orders, tables, menus).
+- Firebase Functions (serverless functions for billing, analytics, geofencing).
+- Firebase Hosting for PWA deployment.
+- Firebase Storage for menu images and invoices.
+- QR Code generation library integration.
+- Printer API integration for waiter billing.
+- Geofencing APIs for location restrictions.
+7. Wireframe (Conceptual)
+[Super Admin Dashboard]
+- Overview of restaurants, revenue, active users.
+[Restaurant Admin Dashboard]
+- Manage Menu, Tables, QR Codes, Orders, Staff, Geofence, Analytics.
+[Waiter App]
+- List of assigned tables.
+- Notifications for new orders.
+- Print Bill option.
+[Customer View]
+- Menu list after QR scan.
+- Add to cart, place order, pay.
+- Feedback option.
+8. Conclusion
+This requirement document ensures 'Restrona' provides a full-fledged Restaurant POS system,
+scalable for multiple restaurants, supporting dine-in, takeaway, delivery, billing, inventory,
+and analytics with modern UI/UX design and Firebase backend.

@@ -1,0 +1,175 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to get user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    
+    // Helper function to check if user is super admin
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserRole() == 'super_admin';
+    }
+    
+    // Helper function to check if user is restaurant admin
+    function isRestaurantAdmin() {
+      return isAuthenticated() && getUserRole() == 'restaurant_admin';
+    }
+    
+    // Helper function to check if user is waiter
+    function isWaiter() {
+      return isAuthenticated() && getUserRole() == 'waiter';
+    }
+    
+    // Helper function to check if user belongs to specific restaurant
+    function belongsToRestaurant(restaurantId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.restaurantId == restaurantId;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can create their own user document (for new registrations)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Users can update their own data
+      allow update: if isAuthenticated() && request.auth.uid == userId;
+      
+      // Super admin can read all users (only if they have a role)
+      allow read: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+      
+      // Super admin can create/update/delete any user (only if they have a role)
+      allow write: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+      
+      // Restaurant admin can read users in their restaurant (only if they have a role)
+      allow read: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'restaurant_admin' && 
+        belongsToRestaurant(resource.data.restaurantId);
+      
+      // Restaurant admin can create/update users in their restaurant (only if they have a role)
+      allow create, update: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'restaurant_admin' && 
+        belongsToRestaurant(resource.data.restaurantId);
+    }
+
+    // Restaurants collection
+    match /restaurants/{restaurantId} {
+      // Super admin has full access to all restaurants
+      allow read, write: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin';
+      
+      // Restaurant admin can read/update their own restaurant
+      allow read, update: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'restaurant_admin' && 
+        belongsToRestaurant(restaurantId);
+      
+      // Waiters can read their restaurant
+      allow read: if isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'waiter' && 
+        belongsToRestaurant(restaurantId);
+      
+      // Public read access for customer-facing data
+      allow read: if true;
+    }
+
+    // Menu items collection
+    match /menuItems/{itemId} {
+      // Super admin can manage all menu items
+      allow read, write: if isSuperAdmin();
+      
+      // Restaurant admin can manage menu items in their restaurant
+      allow read, write: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+      
+      // Waiters can read menu items in their restaurant
+      allow read: if isWaiter() && belongsToRestaurant(resource.data.restaurantId);
+      
+      // Public read access for customers
+      allow read: if true;
+    }
+
+    // Tables collection
+    match /tables/{tableId} {
+      // Super admin can manage all tables
+      allow read, write: if isSuperAdmin();
+      
+      // Restaurant admin can manage tables in their restaurant
+      allow read, write: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+      
+      // Waiters can read/update tables in their restaurant
+      allow read, update: if isWaiter() && belongsToRestaurant(resource.data.restaurantId);
+      
+      // Public read access for QR code scanning
+      allow read: if true;
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      // Super admin can view all orders
+      allow read: if isSuperAdmin();
+      
+      // Restaurant admin can manage orders in their restaurant
+      allow read, write: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+      
+      // Waiters can manage orders in their restaurant
+      allow read, write: if isWaiter() && belongsToRestaurant(resource.data.restaurantId);
+      
+      // Public create access for customer orders
+      allow create: if true;
+    }
+
+    // Analytics collection
+    match /analytics/{analyticsId} {
+      // Super admin can view all analytics
+      allow read: if isSuperAdmin();
+      
+      // Restaurant admin can view their restaurant analytics
+      allow read: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+      
+      // Restaurant admin can create/update their analytics
+      allow write: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+    }
+
+    // Settings collection
+    match /settings/{settingId} {
+      // Super admin has full access to all settings
+      allow read, write: if isSuperAdmin();
+      
+      // Restaurant admin can manage their restaurant settings
+      allow read, write: if isRestaurantAdmin() && 
+        belongsToRestaurant(resource.data.restaurantId);
+    }
+
+    // OTP Verification collection - only accessible by Cloud Functions
+    match /otp_verification/{phoneNumber} {
+      // Only allow Cloud Functions to access OTP data
+      allow read, write: if false;
+      
+      // This collection is managed entirely by Cloud Functions
+      // No client-side access is allowed for security
+    }
+  }
+}
